@@ -11,33 +11,36 @@ var Table = Table || (function Table(source) {
 
 	this.reload = () => {
 		return new Promise((res, rej) => {
+			console.log('DEBUG', this);
 			if (this._source === null) {
 				return rej('No source set');
-			}
-
-			var xhr = new XMLHttpRequest();
-			xhr.open('GET', this._source);
-			xhr.send(null);
-			xhr.onreadystatechange = () => {
-				try {
-					var DONE = 4; // readyState 4 means the request is done.
-					var OK = 200; // status 200 is a successful return.
-					if (xhr.readyState === DONE) {
-						if (xhr.status === OK) {
-							return res(JSON.parse(xhr.responseText));
-						} else {
-							return rej(xhr.status);
+			} else if (typeof this._source === 'object') {
+				return res(this._source);
+			} else {
+				var xhr = new XMLHttpRequest();
+				xhr.open('GET', this._source);
+				xhr.send(null);
+				xhr.onreadystatechange = () => {
+					try {
+						var DONE = 4; // readyState 4 means the request is done.
+						var OK = 200; // status 200 is a successful return.
+						if (xhr.readyState === DONE) {
+							if (xhr.status === OK) {
+								return res(JSON.parse(xhr.responseText));
+							} else {
+								return rej(xhr.status);
+							}
 						}
+					} catch (e) {
+						return rej(e);
 					}
-				} catch (e) {
-					return rej(e);
-				}
-			};
+				};
 
-			// test data (for local use)
-			/*return res(JSON.parse(
-				'{"head":{"name":"Name","functions":"Functions","rep+":"Additional Responsibilities","contact":"Contact"},"entries":[{"name":"Peter Nerlich","functions":["LC Germany","UBFR","UBAM"],"resp+":["creator/maintainer of UBAM GitHub"],"contact":{"telegram":"@peternerlich","email":"peter.nerlich+ubports@googlemail.com"}},{"name":"Wayne","functions":["LC Korea","UBFR","UBAM","(many more)"],"resp+":["does potentially everything in/around the community"],"contact":{"telegram":"@wayneoutthere"}},{"name":"Emanuele Sorce","functions":["LC Italy","UBFR","UBAM"],"resp+":[],"contact":{"telegram":"@TronFortyTwo"}},{"name":"Diogo Constantino","functions":["LC Portugal","UBAM"],"resp+":[],"contact":{"telegram":"@DiogoConstantino"}},{"name":"This","functions":["is"],"resp+":[],"contact":{"telegram":"@test"}}]}'
-			));*/
+				// test data (for local use)
+				/*return res(JSON.parse(
+					'{"head":{"name":"Name","functions":"Functions","rep+":"Additional Responsibilities","contact":"Contact"},"entries":[{"name":"Peter Nerlich","functions":["LC Germany","UBFR","UBAM"],"resp+":["creator/maintainer of UBAM GitHub"],"contact":{"telegram":"@peternerlich","email":"peter.nerlich+ubports@googlemail.com"}},{"name":"Wayne","functions":["LC Korea","UBFR","UBAM","(many more)"],"resp+":["does potentially everything in/around the community"],"contact":{"telegram":"@wayneoutthere"}},{"name":"Emanuele Sorce","functions":["LC Italy","UBFR","UBAM"],"resp+":[],"contact":{"telegram":"@TronFortyTwo"}},{"name":"Diogo Constantino","functions":["LC Portugal","UBAM"],"resp+":[],"contact":{"telegram":"@DiogoConstantino"}},{"name":"This","functions":["is"],"resp+":[],"contact":{"telegram":"@test"}}]}'
+				));*/
+			}
 		});
 	};
 
@@ -57,6 +60,14 @@ var Table = Table || (function Table(source) {
 					this._source = old;
 					return rej(e);
 				});
+			} else if (typeof source === 'object') {
+				try {
+					source = JSON.parse(JSON.stringify(source));
+				} catch (e) {
+					return rej(e);
+				}
+				this._json = this._source = source;
+				return res(source);
 			} else {
 				return rej('No source set');
 			}
@@ -286,11 +297,11 @@ var insertTable = (source, filter, parent) => {
 		filter = !!filter;
 		t.setSource(source).then(() => {
 			t.create().then(e => {
-				if (typeof parent === 'undefined') {
+				if (parent instanceof Node) {
+					parent.appendChild(e);
+				} else {
 					let scripts = document.getElementsByTagName('script');
 					scripts[scripts.length-1].replaceWith(e);
-				} else {
-					parent.appendChild(e);
 				}
 
 				if (filter) {
