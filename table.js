@@ -154,11 +154,11 @@ var Table = Table || (function Table(source) {
 		//sort this._entries
 		if (this.sortAsc) {
 			this._entries.sort((a,b) => {
-				return a.obj[this.sortBy] > b.obj[this.sortBy];
+				return a.obj[this.sortBy].toLowerCase() > b.obj[this.sortBy].toLowerCase();
 			});
 		} else {
 			this._entries.sort((a,b) => {
-				return a.obj[this.sortBy] < b.obj[this.sortBy];
+				return a.obj[this.sortBy].toLowerCase() < b.obj[this.sortBy].toLowerCase();
 			});
 		}
 
